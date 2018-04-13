@@ -3,7 +3,7 @@
 
 ## Installation
 
-Require as a composer dependency with `composer require tbpixel/drupalorm`
+Require as a composer dependency with `composer require tbpixel/drupalorm:dev-master`
 
 
 ## How to use
