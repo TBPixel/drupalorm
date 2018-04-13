@@ -82,9 +82,10 @@ abstract class Entity
 
         if ($this->isField($name))
         {
-            return new Collection(
-                field_get_items($this->entity_type, $this->entity, $name)
-            );
+            $field = field_get_items($this->entity_type, $this->entity, $name);
+
+            if (count($field) > 1) return new Collection($field);
+            if (count($field) > 0) return $field[0];
         }
 
 
