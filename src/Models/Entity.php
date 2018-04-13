@@ -151,7 +151,7 @@ abstract class Entity
         $result = $this->get()->first($default);
 
 
-        return $result ? new static($result) : $default;
+        return $result ?? $default;
     }
 
 
