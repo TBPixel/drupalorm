@@ -77,7 +77,18 @@ abstract class Entity
      */
     public function __get(string $name)
     {
-        if (property_exists($this->entity, $name)) return $this->entity->{$name};
+        if (!property_exists($this->entity, $name)) return;
+
+
+        if ($this->isField($name))
+        {
+            return new Collection(
+                field_get_items($this->entity_type, $this->entity, $name)
+            );
+        }
+
+
+        return $this->entity->{$name};
     }
 
 
@@ -202,17 +213,22 @@ abstract class Entity
     }
 
 
+
     /**
-     * Limit the size of the result set withing a given range
+     * Returns if the given field name is a field of the current entity
      */
-    public function limit(int $limit, int $offset = 0) : Entity
+    protected function isField(string $name) : bool
     {
-        $this->query->range($offset, $limit);
+        $field_names = array_keys(
+            field_language($this->entity_type, $this->entity)
+        );
 
 
-        return $this;
+        return (
+            $this->entity !== null &&
+            in_array($name, $field_names)
+        );
     }
-
 
 
     /**
