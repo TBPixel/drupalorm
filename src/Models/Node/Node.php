@@ -44,6 +44,6 @@ class Node extends Entity
      */
     public function urlAlias() : string
     {
-        return drupal_get_path_alias("node/{$this->nid}");
+        return '/' . drupal_get_path_alias("node/{$this->nid}");
     }
 }
