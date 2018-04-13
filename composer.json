@@ -1,0 +1,20 @@
+{
+    "name": "tbpixel/drupalorm",
+    "description": "Drupal Object Relational Mappings",
+    "license": "MIT",
+    "type": "package",
+    "version": "0.1.0",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Tony Barry",
+            "email": "tonympbarry@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "TBPixel\\DrupalORM\\": "src/"
+        }
+    },
+    "require": {}
+}
