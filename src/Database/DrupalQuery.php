@@ -23,6 +23,12 @@ class DrupalQuery implements Queryable
     }
 
 
+    public function __clone()
+    {
+        $this->query = clone $this->query;
+    }
+
+
 
     public function execute() : array
     {

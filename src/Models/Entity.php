@@ -4,13 +4,16 @@ namespace TBPixel\DrupalORM\Models;
 
 use TBPixel\DrupalORM\Models\Collection;
 use TBPixel\DrupalORM\Database\DrupalQuery;
+use TBPixel\DrupalORM\Alterations\Alterable;
 use TBPixel\DrupalORM\Filters\{
     Filterable,
     TypeOf,
     GroupOf,
     PrimaryKeyIs
 };
-use TBPixel\DrupalORM\Alterations\Alterable;
+use TBPixel\DrupalORM\Alterations\{
+    Limit
+};
 
 
 abstract class Entity
@@ -190,12 +193,14 @@ abstract class Entity
     public function chunk(int $limit, callable $callback) : void
     {
         $count     = (clone $this)->count();
-        $chunksize = round($count / $limit);
+        $chunksize = ceil($count / $limit);
 
         for ($i = 0; $i < $chunksize; $i++)
         {
             $offset  = $limit * $i;
-            $results = (clone $this)->limit($limit, $offset)->get();
+            $results = (clone $this)->alter(
+                new Limit($limit, $offset)
+            )->get();
 
             $callback($results);
         }
