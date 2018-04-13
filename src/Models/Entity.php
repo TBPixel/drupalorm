@@ -212,7 +212,7 @@ abstract class Entity
      */
     public function count() : int
     {
-        $data = $this->query->count()->execute();
+        $data = (clone $this)->query->count()->execute();
 
 
         return $data['result'];
