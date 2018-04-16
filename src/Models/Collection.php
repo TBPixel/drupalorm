@@ -93,7 +93,7 @@ class Collection implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Return a filtered collection of the current items with the given callback
      */
-    public function filter(callback $callback = null) : self
+    public function filter(callable $callback = null) : self
     {
         if ($callback)
         {
@@ -112,7 +112,7 @@ class Collection implements Countable, IteratorAggregate, JsonSerializable
     /**
      * Return a mapped collection of the current items with the given callback
      */
-    public function map(callback $callback) : self
+    public function map(callable $callback) : self
     {
         $keys  = $this->keys()->all();
         $items = array_map($callback, $this->items, $keys);
