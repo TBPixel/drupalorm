@@ -219,6 +219,15 @@ abstract class Entity
     }
 
 
+    /**
+     * Return the ID of the Entity
+     */
+    public function id() : int
+    {
+        return $this->entity->{$this->primary_key};
+    }
+
+
 
     /**
      * Returns if the given field name is a field of the current entity
