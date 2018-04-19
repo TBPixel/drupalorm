@@ -91,6 +91,17 @@ class Collection implements Countable, IteratorAggregate, JsonSerializable
 
 
     /**
+     * Returns a new collection containing the items sorted
+     */
+    public function sort(callable $sorting_func) : self
+    {
+        return new static(
+            usort($this->items, $sorting_func)
+        );
+    }
+
+
+    /**
      * Return a filtered collection of the current items with the given callback
      */
     public function filter(callable $callback = null) : self
