@@ -24,6 +24,6 @@ class Taxonomy extends Entity
      */
     public function urlAlias() : string
     {
-        return drupal_get_path_alias("taxonomy/term/{$this->tid}");
+        return '/' . drupal_get_path_alias("taxonomy/term/{$this->tid}");
     }
 }
