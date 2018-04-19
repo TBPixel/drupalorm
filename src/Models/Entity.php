@@ -228,6 +228,15 @@ abstract class Entity
     }
 
 
+    /**
+     * Return the type of the Entity
+     */
+    public function type() : string
+    {
+        return $this->entity_type;
+    }
+
+
 
     /**
      * Returns if the given field name is a field of the current entity
