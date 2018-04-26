@@ -80,6 +80,17 @@ class Collection implements Countable, IteratorAggregate, JsonSerializable
 
 
     /**
+     * Return a new collection containing the results of a filter by key
+     */
+    public function find($key) : self
+    {
+        return $this->filter(
+            function($v, $k) use ($key) { return $key == $k; }
+        );
+    }
+
+
+    /**
      * Return a new collection containing a reversed order of the current collections items
      */
     public function reverse() : self
@@ -109,13 +120,24 @@ class Collection implements Countable, IteratorAggregate, JsonSerializable
         if ($callback)
         {
             return new static(
-                array_filter($this->items, $callback)
+                array_filter($this->items, $callback, ARRAY_FILTER_USE_BOTH)
             );
         }
 
 
         return new static(
             array_filter($this->items)
+        );
+    }
+
+
+    /**
+     * Return a collection after executing a unique sort
+     */
+    public function unique(int $sort_flags = SORT_STRING) : self
+    {
+        return new static(
+            array_unique($this->items, $sort_flags)
         );
     }
 
