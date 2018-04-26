@@ -6,12 +6,12 @@ use TBPixel\DrupalORM\Filters\Filterable;
 use TBPixel\DrupalORM\Database\Queryable;
 
 
-class PrimaryKeyIs implements Filterable
+class PrimaryKeyIn implements Filterable
 {
     /**
-     * @var string
+     * @var array
      */
-    protected $id;
+    protected $ids;
 
     /**
      * @var string
@@ -20,9 +20,9 @@ class PrimaryKeyIs implements Filterable
 
 
 
-    public function __construct(string $id, string $keyname = 'id')
+    public function __construct(array $ids, string $keyname = 'id')
     {
-        $this->id      = $id;
+        $this->ids     = $ids;
         $this->keyname = $keyname;
     }
 
@@ -30,6 +30,6 @@ class PrimaryKeyIs implements Filterable
 
     public function apply(Queryable $query) : void
     {
-        $query->connection()->propertyCondition($this->keyname, $this->id);
+        $query->connection()->propertyCondition($this->keyname, $this->ids, 'IN');
     }
 }

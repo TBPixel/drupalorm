@@ -9,7 +9,7 @@ use TBPixel\DrupalORM\Filters\{
     Filterable,
     TypeOf,
     GroupOf,
-    PrimaryKeyIs
+    PrimaryKeyIn
 };
 use TBPixel\DrupalORM\Alterations\{
     Limit
@@ -112,12 +112,14 @@ abstract class Entity
     /**
      * Return a given resulting model or the default based on a given id
      */
-    public static function find(int $id, $default = null) : ?Entity
+    public static function find($ids, $default = null) : ?Entity
     {
+        $ids = is_array($ids) ? $ids : [$ids];
+
         $static = new static;
 
         $static->query->where(
-            new PrimaryKeyIs($id, $static->primary_key)
+            new PrimaryKeyIn($ids, $static->primary_key)
         );
 
 
