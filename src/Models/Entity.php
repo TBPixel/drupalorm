@@ -74,8 +74,8 @@ abstract class Entity
         {
             $field = field_get_items($this::entityType(), $this->entity, $name);
 
-            if (count($field) > 1) return new Collection($field);
-            if (count($field) > 0) return $field[0];
+
+            return $field;
         }
 
 
