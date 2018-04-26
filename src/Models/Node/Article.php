@@ -2,13 +2,13 @@
 
 namespace TBPixel\DrupalORM\Models\Node;
 
-use TBPixel\DrupalORM\Models\Node\Node;
+use TBPixel\DrupalORM\Models;
 
 
-class Article extends Node
+class Article extends Models\Node\Node
 {
-    /**
-     * @var string
-     */
-    protected $bundle = 'article';
+    public static function bundle() : ?string
+    {
+        return 'article';
+    }
 }

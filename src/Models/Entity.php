@@ -19,27 +19,6 @@ use TBPixel\DrupalORM\Alterations\{
 abstract class Entity
 {
     /**
-     * Defines the entity_type of the content to query
-     *
-     * @var string
-     */
-    protected $entity_type;
-
-    /**
-     * Defines the bundle of the content to query
-     *
-     * @var string
-     */
-    protected $bundle;
-
-    /**
-     * Defines the primary key of the content to query
-     *
-     * @var string
-     */
-    protected $primary_key;
-
-    /**
      * Maintains a reference to the query class
      *
      * @var TBPixel\DrupalORM\Database\Queryable
@@ -58,8 +37,8 @@ abstract class Entity
     public function __construct($entity = null)
     {
         $this->query = new DrupalQuery;
-        $this->query->where(new TypeOf($this->entity_type));
-        if ($this->bundle !== null) $this->query->where(new GroupOf($this->bundle));
+        $this->query->where(new TypeOf($this::entityType()));
+        if ($this::bundle() !== null) $this->query->where(new GroupOf($this::bundle()));
 
         if ($entity !== null && is_object($entity)) $this->entity = $entity;
     }
@@ -85,7 +64,7 @@ abstract class Entity
 
         if ($this->isField($name))
         {
-            $field = field_get_items($this->entity_type, $this->entity, $name);
+            $field = field_get_items($this::entityType(), $this->entity, $name);
 
             if (count($field) > 1) return new Collection($field);
             if (count($field) > 0) return $field[0];
@@ -108,6 +87,27 @@ abstract class Entity
     }
 
 
+    /**
+     * Returns the primary key of the entity
+     */
+    abstract public static function primaryKey() : string;
+
+
+    /**
+     * Returns the type of the entity
+     */
+    abstract public static function entityType() : string;
+
+
+    /**
+     * Returns the bundle of the entity, if set
+     */
+    public static function bundle() : ?string
+    {
+        return null;
+    }
+
+
 
     /**
      * Return a given resulting model or the default based on a given id
@@ -119,7 +119,7 @@ abstract class Entity
         $static = new static;
 
         $static->query->where(
-            new PrimaryKeyIn($ids, $static->primary_key)
+            new PrimaryKeyIn($ids, $static::primaryKey())
         );
 
 
@@ -226,7 +226,7 @@ abstract class Entity
      */
     public function id() : int
     {
-        return $this->entity->{$this->primary_key};
+        return $this->entity->{$this::primaryKey()};
     }
 
 
@@ -235,7 +235,7 @@ abstract class Entity
      */
     public function type() : string
     {
-        return $this->entity_type;
+        return $this::entityType();
     }
 
 
@@ -246,7 +246,7 @@ abstract class Entity
     protected function isField(string $name) : bool
     {
         $field_names = array_keys(
-            field_language($this->entity_type, $this->entity)
+            field_language($this::entityType(), $this->entity)
         );
 
 
@@ -274,7 +274,7 @@ abstract class Entity
      */
     protected function load(array $ids) : array
     {
-        return !empty($ids) ? entity_load($this->entity_type, $ids) : [];
+        return !empty($ids) ? entity_load($this::entityType(), $ids) : [];
     }
 
 
@@ -283,6 +283,6 @@ abstract class Entity
      */
     protected function getIds(array $result) : array
     {
-        return isset($result[$this->entity_type]) ? array_keys($result[$this->entity_type]) : [];
+        return isset($result[$this::entityType()]) ? array_keys($result[$this::entityType()]) : [];
     }
 }

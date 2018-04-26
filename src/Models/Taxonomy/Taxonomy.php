@@ -7,15 +7,16 @@ use TBPixel\DrupalORM\Models\Entity;
 
 class Taxonomy extends Entity
 {
-    /**
-     * @var string
-     */
-    protected $entity_type = 'taxonomy_term';
+    public static function entityType() : string
+    {
+        return 'taxonomy_term';
+    }
 
-    /**
-     * @var string
-     */
-    protected $primary_key = 'tid';
+
+    public static function primaryKey() : string
+    {
+        return 'tid';
+    }
 
 
 

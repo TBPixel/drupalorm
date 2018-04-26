@@ -9,15 +9,16 @@ use DateTime;
 
 class Node extends Entity
 {
-    /**
-     * @var string
-     */
-    protected $entity_type = 'node';
+    public static function entityType() : string
+    {
+        return 'node';
+    }
 
-    /**
-     * @var string
-     */
-    protected $primary_key = 'nid';
+
+    public static function primaryKey() : string
+    {
+        return 'nid';
+    }
 
 
 
