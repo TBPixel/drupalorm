@@ -248,7 +248,7 @@ abstract class Entity
 
 
     /**
-     *
+     * Executes a relationship on a given model
      */
     protected function with(string $Class, string $foreign_key) : Entity
     {
@@ -265,6 +265,8 @@ abstract class Entity
         // Retrieve all foreing ids as a single collection
         foreach ($this->get() as $entity)
         {
+            if (!is_array($entity->{$foreign_key})) continue;
+
             $foreign_ids = $foreign_ids->merge(
                 array_map(
                     function(array $item) use ($primary_key) { return $item[$primary_key]; },
