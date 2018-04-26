@@ -14,10 +14,18 @@ use TBPixel\DrupalORM\Filters\{
 use TBPixel\DrupalORM\Alterations\{
     Limit
 };
+use TBPixel\DrupalORM\Exceptions\InvalidEntity;
 
 
 abstract class Entity
 {
+    /**
+     * Maintains all relationships retrieved into memory
+     *
+     * @var array
+     */
+    protected static $relationships = [];
+
     /**
      * Maintains a reference to the query class
      *
@@ -236,6 +244,86 @@ abstract class Entity
     public function type() : string
     {
         return $this::entityType();
+    }
+
+
+    /**
+     *
+     */
+    protected function with(string $Class, string $foreign_key) : Entity
+    {
+    // Avoid an invalid class being passed in
+        if (!class_exists($Class) || !is_subclass_of($Class, Entity::class)) throw new InvalidEntity("Class: {$Class} is not a subclass of " . Entity::class);
+
+        // Data in cache, exit early
+        if (in_array($foreign_key, array_keys(static::$relationships))) return $this;
+
+
+        $primary_key = $Class::primaryKey();
+        $foreign_ids = new Collection;
+
+        // Retrieve all foreing ids as a single collection
+        foreach ($this->get() as $entity)
+        {
+            $foreign_ids = $foreign_ids->merge(
+                array_map(
+                    function(array $item) use ($primary_key) { return $item[$primary_key]; },
+                    $entity->{$foreign_key}
+                )
+            );
+        }
+
+        // Filter out all but unique ids and return as an array
+        $foreign_ids = $foreign_ids->unique()->all();
+
+        // Update in-memory relationships to reflect new get
+        static::$relationships[$foreign_key] = $Class::all()
+            ->where(
+                new PrimaryKeyIn($foreign_ids, $primary_key)
+            )
+            ->get();
+
+
+        return $this;
+    }
+
+
+    /**
+     * Return the result of a One-To-One relationship
+     */
+    protected function hasOne(string $Class, string $foreign_key) : Entity
+    {
+        return $this->hasMany($Class, $foreign_key)->first();
+    }
+
+
+    /**
+     * Return the result of a One-To-Many relationship
+     */
+    protected function hasMany(string $Class, string $foreign_key) : Collection
+    {
+        if (!in_array($foreign_key, array_keys(static::$relationships))) $this->with($Class, $foreign_key);
+
+        $primary_key  = $Class::primaryKey();
+        $relationship = new Collection;
+
+        /** @var Collection $fetched */
+        $fetched = static::$relationships[$foreign_key];
+
+        $ids = array_map(
+            function(array $item) use ($primary_key) { return $item[$primary_key]; },
+            $this->{$foreign_key}
+        );
+
+        foreach ($ids as $id)
+        {
+            $relationship = $relationship->merge(
+                $fetched->filter(function(Entity $entity) use ($id) { return $id == $entity->id(); })
+            );
+        }
+
+
+        return $relationship;
     }
 
 

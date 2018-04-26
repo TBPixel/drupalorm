@@ -11,4 +11,13 @@ class Article extends Models\Node\Node
     {
         return 'article';
     }
+
+
+    public function categories() : Models\Collection
+    {
+        return $this->hasMany(
+            Models\Taxonomy\Taxonomy::class,
+            'field_blog_category'
+        );
+    }
 }
