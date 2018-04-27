@@ -252,7 +252,7 @@ abstract class Entity
      */
     protected function with(string $Class, string $foreign_key) : Entity
     {
-    // Avoid an invalid class being passed in
+        // Avoid an invalid class being passed in
         if (!class_exists($Class) || !is_subclass_of($Class, Entity::class)) throw new InvalidEntity("Class: {$Class} is not a subclass of " . Entity::class);
 
         // Data in cache, exit early
@@ -304,6 +304,7 @@ abstract class Entity
      */
     protected function hasMany(string $Class, string $foreign_key) : Collection
     {
+        if (!is_array($this->{$foreign_key})) return new Collection;
         if (!in_array($foreign_key, array_keys(static::$relationships))) $this->with($Class, $foreign_key);
 
         $primary_key  = $Class::primaryKey();
