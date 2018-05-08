@@ -250,7 +250,7 @@ abstract class Entity
     /**
      * Executes a relationship on a given model
      */
-    protected function with(string $Class, string $foreign_key) : Entity
+    protected function with(string $Class, string $foreign_key, string $primary_key = null) : Entity
     {
         // Avoid an invalid class being passed in
         if (!class_exists($Class) || !is_subclass_of($Class, Entity::class)) throw new InvalidEntity("Class: {$Class} is not a subclass of " . Entity::class);
@@ -259,7 +259,7 @@ abstract class Entity
         if (in_array($foreign_key, array_keys(static::$relationships))) return $this;
 
 
-        $primary_key = $Class::primaryKey();
+        $primary_key = $primary_key ?? $Class::primaryKey();
         $foreign_ids = new Collection;
 
         // Retrieve all foreing ids as a single collection
@@ -281,7 +281,7 @@ abstract class Entity
         // Update in-memory relationships to reflect new get
         static::$relationships[$foreign_key] = $Class::all()
             ->where(
-                new PrimaryKeyIn($foreign_ids, $primary_key)
+                new PrimaryKeyIn($foreign_ids, $Class::primaryKey())
             )
             ->get();
 
@@ -293,21 +293,21 @@ abstract class Entity
     /**
      * Return the result of a One-To-One relationship
      */
-    protected function hasOne(string $Class, string $foreign_key) : Entity
+    protected function hasOne(string $Class, string $foreign_key, string $primary_key = null) : ?Entity
     {
-        return $this->hasMany($Class, $foreign_key)->first();
+        return $this->hasMany($Class, $foreign_key, $primary_key)->first();
     }
 
 
     /**
      * Return the result of a One-To-Many relationship
      */
-    protected function hasMany(string $Class, string $foreign_key) : Collection
+    protected function hasMany(string $Class, string $foreign_key, string $primary_key = null) : Collection
     {
         if (!is_array($this->{$foreign_key})) return new Collection;
-        if (!in_array($foreign_key, array_keys(static::$relationships))) $this->with($Class, $foreign_key);
+        if (!in_array($foreign_key, array_keys(static::$relationships))) $this->with($Class, $foreign_key, $primary_key);
 
-        $primary_key  = $Class::primaryKey();
+        $primary_key  = $primary_key ?? $Class::primaryKey();
         $relationship = new Collection;
 
         /** @var Collection $fetched */

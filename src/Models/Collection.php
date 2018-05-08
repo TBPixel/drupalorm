@@ -55,7 +55,7 @@ class Collection implements Countable, IteratorAggregate, JsonSerializable
      */
     public function first($default = null)
     {
-        return reset($this->items) ?? $default;
+        return ($result = reset($this->items)) ? $result : $default;
     }
 
 
