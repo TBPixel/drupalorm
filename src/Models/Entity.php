@@ -5,6 +5,10 @@ namespace TBPixel\DrupalORM\Models;
 use TBPixel\DrupalORM\Models\Collection;
 use TBPixel\DrupalORM\Database\DrupalQuery;
 use TBPixel\DrupalORM\Alterations\Alterable;
+use TBPixel\DrupalORM\Fields\{
+    Fields,
+    DrupalFields
+};
 use TBPixel\DrupalORM\Filters\{
     Filterable,
     TypeOf,
@@ -113,6 +117,15 @@ abstract class Entity
     public static function bundle() : ?string
     {
         return null;
+    }
+
+
+    /**
+     * Returns a Fields instance for reading defined field types of a Model
+     */
+    public static function fields() : Fields
+    {
+        return new DrupalFields;
     }
 
 
