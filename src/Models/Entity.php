@@ -402,8 +402,8 @@ abstract class Entity
         {
             if (!field_info_instance(static::entityType(), $instance['field_name'], static::bundle()))
             {
-                $instance['entity_type'] = static::entityType();
-                $instance['bundle']      = static::bundle();
+                $instance['entity_type'] = $instance['entity_type'] ?? static::entityType();
+                $instance['bundle']      = $instance['bundle'] ?? static::bundle();
 
                 field_create_instance($instance);
             }
@@ -420,12 +420,12 @@ abstract class Entity
         if (static::bundle() === null) return;
 
 
-        // Delete field instances
-        $fields = field_info_instances(static::entityType(), static::bundle());
-
-        foreach ($fields as $instance)
+        foreach (static::fields()->instances() as $instance)
         {
-            if (field_info_instance(static::entityType(), $instance['field_name'], static::bundle())) field_delete_instance($instance);
+            $entity_type = $instance['entity_type'] ?? static::entityType();
+            $bundle      = $instance['bundle'] ?? static::bundle();
+
+            if (field_info_instance($entity_type, $instance['field_name'], $bundle)) field_delete_instance($instance);
         }
     }
 
