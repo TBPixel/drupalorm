@@ -388,18 +388,25 @@ abstract class Entity
      */
     protected static function install_fields() : void
     {
+        // Skip if Entity has no bundle
+        if (static::bundle() === null) return;
+
+
         foreach(static::fields()->bases() as $base)
         {
-            field_create_field($base);
+            if (!field_info_field($base['field_name'])) field_create_field($base);
         }
 
 
         foreach(static::fields()->instances() as $instance)
         {
-            $instance['entity_type'] = static::entityType();
-            $instance['bundle']      = static::bundle();
+            if (!field_info_instance(static::entityType(), $instance['field_name'], static::bundle()))
+            {
+                $instance['entity_type'] = static::entityType();
+                $instance['bundle']      = static::bundle();
 
-            field_create_instance($instance);
+                field_create_instance($instance);
+            }
         }
     }
 
@@ -409,12 +416,16 @@ abstract class Entity
      */
     protected static function uninstall_fields() : void
     {
+        // Skip if Entity has no bundle
+        if (static::bundle() === null) return;
+
+
         // Delete field instances
         $fields = field_info_instances(static::entityType(), static::bundle());
 
         foreach ($fields as $instance)
         {
-            field_delete_instance($instance);
+            if (field_info_instance(static::entityType(), $instance['field_name'], static::bundle())) field_delete_instance($instance);
         }
     }
 
