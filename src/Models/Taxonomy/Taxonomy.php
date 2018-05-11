@@ -5,7 +5,7 @@ namespace TBPixel\DrupalORM\Models\Taxonomy;
 use TBPixel\DrupalORM\Models\Entity;
 
 
-class Taxonomy extends Entity
+abstract class Taxonomy extends Entity
 {
     public static function entityType() : string
     {
