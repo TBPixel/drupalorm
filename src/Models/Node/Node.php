@@ -22,7 +22,7 @@ class Node extends Entity
     }
 
 
-    public static function install(array $settings) : void
+    public static function install(array $settings = []) : void
     {
         // Nothing to install if bundle is unset
         if (static::bundle() === null) return;
@@ -34,20 +34,7 @@ class Node extends Entity
 
         node_type_save($content_type);
 
-
-        foreach(static::fields()->bases() as $base)
-        {
-            field_create_field($base);
-        }
-
-
-        foreach(static::fields()->instances() as $instance)
-        {
-            $instance['entity_type'] = static::entityType();
-            $instance['bundle']      = static::bundle();
-
-            field_create_instance($instance);
-        }
+        static::install_fields();
     }
 
 
@@ -68,13 +55,7 @@ class Node extends Entity
         });
 
 
-        // Delete field instances
-        $fields = field_info_instances(static::entityType(), static::bundle());
-
-        foreach ($fields as $instance)
-        {
-            field_delete_instance($instance);
-        }
+        static::uninstall_fields();
 
 
         node_type_delete(static::bundle());

@@ -117,6 +117,18 @@ abstract class Entity
 
 
     /**
+     * Executes installation instructions to create a new entity type
+     */
+    abstract public static function install(array $settings = []) : void;
+
+
+    /**
+     * Executes uninstallation instructions to remove an existing entity type
+     */
+    abstract public static function uninstall() : void;
+
+
+    /**
      * Returns the bundle of the entity, if set
      */
     public static function bundle() : ?string
@@ -364,6 +376,42 @@ abstract class Entity
 
 
         return $relationship;
+    }
+
+
+    /**
+     * Install and attach field instances to Entity
+     */
+    protected static function install_fields() : void
+    {
+        foreach(static::fields()->bases() as $base)
+        {
+            field_create_field($base);
+        }
+
+
+        foreach(static::fields()->instances() as $instance)
+        {
+            $instance['entity_type'] = static::entityType();
+            $instance['bundle']      = static::bundle();
+
+            field_create_instance($instance);
+        }
+    }
+
+
+    /**
+     * Uninstall and detach instance fields from Entity
+     */
+    protected static function uninstall_fields() : void
+    {
+        // Delete field instances
+        $fields = field_info_instances(static::entityType(), static::bundle());
+
+        foreach ($fields as $instance)
+        {
+            field_delete_instance($instance);
+        }
     }
 
 
