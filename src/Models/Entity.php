@@ -31,6 +31,11 @@ abstract class Entity
     protected static $relationships = [];
 
     /**
+     * @var Fields
+     */
+    protected static $fields;
+
+    /**
      * Maintains a reference to the query class
      *
      * @var TBPixel\DrupalORM\Database\Queryable
@@ -125,7 +130,26 @@ abstract class Entity
      */
     public static function fields() : Fields
     {
-        return new DrupalFields;
+        if (static::bundle() === null) return new DrupalFields;
+
+
+        if (static::$fields === null)
+        {
+            $bases          = field_info_fields();
+            $instances      = field_info_instances(static::entityType(), static::bundle());
+            $field_names    = array_keys($instances);
+
+            $bases = array_filter(
+                $bases,
+                function(array $field, string $key) use ($field_names) { return in_array($key, $field_names); },
+                ARRAY_FILTER_USE_BOTH
+            );
+
+            static::$fields = new DrupalFields($bases, $instances);
+        }
+
+
+        return static::$fields;
     }
 
 
