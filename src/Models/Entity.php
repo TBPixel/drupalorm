@@ -169,7 +169,7 @@ abstract class Entity
     /**
      * Return a given resulting model or the default based on a given id
      */
-    public static function find($ids, $default = null) : ?Entity
+    public static function find($ids, $default = null) : ?Collection
     {
         $ids = is_array($ids) ? $ids : [$ids];
 
@@ -179,8 +179,10 @@ abstract class Entity
             new PrimaryKeyIn($ids, $static::primaryKey())
         );
 
+        $result = $static->get();
 
-        return $static->first($default);
+
+        return $result->count() ? $result : $default;
     }
 
 
@@ -222,7 +224,9 @@ abstract class Entity
      */
     public function first($default = null) : ?Entity
     {
-        $result = $this->get()->first($default);
+        $result = $this->alter(
+            new Limit(1)
+        )->get()->first($default);
 
 
         return $result ?? $default;
