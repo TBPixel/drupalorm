@@ -5,6 +5,7 @@ namespace TBPixel\DrupalORM\Models\Node;
 use TBPixel\DrupalORM\Models\Entity;
 use DateTimeInterface;
 use DateTime;
+use TBPixel\DrupalORM\Models\Collection;
 
 
 class Node extends Entity
@@ -18,6 +19,67 @@ class Node extends Entity
     public static function primaryKey() : string
     {
         return 'nid';
+    }
+
+
+    public static function install(array $settings) : void
+    {
+        // Nothing to install if bundle is unset
+        if (static::bundle() === null) return;
+
+
+        $settings['type'] = static::bundle();
+
+        $content_type = node_type_set_defaults($settings);
+
+        node_type_save($content_type);
+
+
+        foreach(static::fields()->bases() as $base)
+        {
+            field_create_field($base);
+        }
+
+
+        foreach(static::fields()->instances() as $instance)
+        {
+            $instance['entity_type'] = static::entityType();
+            $instance['bundle']      = static::bundle();
+
+            field_create_instance($instance);
+        }
+    }
+
+
+    public static function uninstall() : void
+    {
+        // Nothing to uninstall if bundle is unset
+        if (static::bundle() === null) return;
+
+
+        // Chunk delete
+        static::all()->chunk(200, function(Collection $nodes)
+        {
+            $node_ids = $nodes->map(
+                function(Node $node) { return $node->id(); }
+            );
+
+            node_delete_multiple($node_ids);
+        });
+
+
+        // Delete field instances
+        $fields = field_info_instances(static::entityType(), static::bundle());
+
+        foreach ($fields as $instance)
+        {
+            field_delete_instance($instance);
+        }
+
+
+        node_type_delete(static::bundle());
+
+        field_purge_batch(1000);
     }
 
 
