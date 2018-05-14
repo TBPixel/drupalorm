@@ -187,6 +187,23 @@ abstract class Entity
 
 
     /**
+     * Return a given resulting model or the default based on a given url
+     */
+    public static function findByUrl(string $url, $default = null) : ?Collection
+    {
+        $path   = path_load(['alias' => $url]);
+
+        if (!$path) return $default;
+
+        $segments = explode('/', $path['source']);
+        $id       = end($segments);
+
+
+        return static::find($id, $default);
+    }
+
+
+    /**
      * Return an instance of Entity ready to get all results
      */
     public static function all() : Entity
