@@ -2,10 +2,10 @@
 
 namespace TBPixel\DrupalORM\Models\Taxonomy;
 
-use TBPixel\DrupalORM\Models\Taxonomy\Taxonomy;
+use TBPixel\DrupalORM\Models\Taxonomy\Term;
 
 
-class Tag extends Taxonomy
+class Tag extends Term
 {
     public static function bundle(): string
     {

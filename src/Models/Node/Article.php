@@ -2,14 +2,17 @@
 
 namespace TBPixel\DrupalORM\Models\Node;
 
-use TBPixel\DrupalORM\Models;
+use TBPixel\DrupalORM\Models\Collection;
+use TBPixel\DrupalORM\Models\Node\Node;
+use TBPixel\DrupalORM\Models\Taxonomy\Tag;
 use TBPixel\DrupalORM\Fields\{
     Fields,
     DrupalFields
 };
+use stdClass;
 
 
-class Article extends Models\Node\Node
+class Article extends Node
 {
     public static function bundle() : ?string
     {
@@ -17,11 +20,23 @@ class Article extends Models\Node\Node
     }
 
 
-    public function categories() : Models\Collection
+    public static function defaults(stdClass $entity) : stdClass
+    {
+        $entity = parent::defaults($entity);
+
+        $entity->title = '';
+
+
+        return $entity;
+    }
+
+
+    public function tags() : Collection
     {
         return $this->hasMany(
-            Models\Taxonomy\Taxonomy::class,
-            'field_blog_category'
+            Tag::class,
+            'field_tags',
+            [$this->id()]
         );
     }
 }

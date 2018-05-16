@@ -3,12 +3,15 @@
 namespace TBPixel\DrupalORM\Models\Node;
 
 use TBPixel\DrupalORM\Models\Entity;
+use TBPixel\DrupalORM\Models\Collection;
+use TBPixel\DrupalORM\Models\Installable;
+use TBPixel\DrupalORM\Exceptions\InvalidEntity;
+use stdClass;
 use DateTimeInterface;
 use DateTime;
-use TBPixel\DrupalORM\Models\Collection;
 
 
-class Node extends Entity
+class Node extends Entity implements Installable
 {
     public static function entityType() : string
     {
@@ -61,6 +64,55 @@ class Node extends Entity
         node_type_delete(static::bundle());
 
         field_purge_batch(1000);
+    }
+
+
+    public static function defaults(stdClass $entity) : stdClass
+    {
+        if (!static::bundle()) throw new InvalidEntity('Node must have a bundle to be saved!');
+
+        global $user;
+
+
+        $entity->uid      = $user->uid;
+        $entity->status   = NODE_PUBLISHED;
+        $entity->type     = static::bundle();
+        $entity->language = LANGUAGE_NONE;
+
+        foreach(static::fields()->bases() as $field)
+        {
+            $name = $field['field_name'];
+
+
+            $entity->{$name} = [];
+        }
+
+
+        return $entity;
+    }
+
+
+    public function save() : Entity
+    {
+        if (!static::bundle() && !$this->entity->type) throw new InvalidEntity('Node must have a bundle to be saved!');
+
+
+        node_save($this->entity);
+
+
+        return $this;
+    }
+
+
+    public function delete() : Entity
+    {
+        if (!isset($this->entity->{static::primaryKey()}) || $this->entity->{static::primaryKey()} === null) throw new InvalidEntity('Node must have an entity instance to be deleted!');
+
+
+        node_delete($this->id());
+
+
+        return $this;
     }
 
 

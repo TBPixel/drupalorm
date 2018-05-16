@@ -19,6 +19,7 @@ use TBPixel\DrupalORM\Alterations\{
     Limit
 };
 use TBPixel\DrupalORM\Exceptions\InvalidEntity;
+use stdClass;
 
 
 abstract class Entity
@@ -45,7 +46,7 @@ abstract class Entity
     /**
      * Holds the entity instance
      *
-     * @var mixed
+     * @var object
      */
     protected $entity;
 
@@ -58,6 +59,7 @@ abstract class Entity
         if ($this::bundle() !== null) $this->query->where(new GroupOf($this::bundle()));
 
         if ($entity !== null && is_object($entity)) $this->entity = $entity;
+        else $this->entity = static::defaults(new stdClass);
     }
 
 
@@ -84,11 +86,17 @@ abstract class Entity
             $field = field_get_items($this::entityType(), $this->entity, $name);
 
 
-            return $field;
+            return (count($field) > 1) ? $field : field_view_value(static::entityType(), $this->entity, $name, $field[0]);
         }
 
 
         return $this->entity->{$name};
+    }
+
+
+    public function __set(string $name, $value) : void
+    {
+        $this->entity->{$name} = $value;
     }
 
 
@@ -117,15 +125,21 @@ abstract class Entity
 
 
     /**
-     * Executes installation instructions to create a new entity type
+     * Sets the default values of the entity instance
      */
-    abstract public static function install(array $settings = []) : void;
+    abstract public static function defaults(stdClass $entity) : stdClass;
 
 
     /**
-     * Executes uninstallation instructions to remove an existing entity type
+     * Executes saving of a new or existing Entity
      */
-    abstract public static function uninstall() : void;
+    abstract public function save() : Entity;
+
+
+    /**
+     * Executes deleting of a new or existing Entity
+     */
+    abstract public function delete() : Entity;
 
 
     /**
@@ -169,7 +183,7 @@ abstract class Entity
     /**
      * Return a given resulting model or the default based on a given id
      */
-    public static function find($ids, $default = null) : ?Collection
+    public static function find($ids) : Collection
     {
         $ids = is_array($ids) ? $ids : [$ids];
 
@@ -182,24 +196,22 @@ abstract class Entity
         $result = $static->get();
 
 
-        return $result->count() ? $result : $default;
+        return $static->get();
     }
 
 
     /**
      * Return a given resulting model or the default based on a given url
      */
-    public static function findByUrl(string $url, $default = null) : ?Collection
+    public static function findByUrl(string $url) : Collection
     {
-        $path   = path_load(['alias' => $url]);
-
-        if (!$path) return $default;
+        if (!is_array($path = path_load(['alias' => $url]))) return new Collection;
 
         $segments = explode('/', $path['source']);
         $id       = end($segments);
 
 
-        return static::find($id, $default);
+        return static::find($id);
     }
 
 
@@ -320,40 +332,45 @@ abstract class Entity
     /**
      * Executes a relationship on a given model
      */
-    protected function with(string $Class, string $foreign_key, string $primary_key = null) : Entity
+    protected function with(string $class, string $foreign_key, array $ids) : Entity
     {
         // Avoid an invalid class being passed in
-        if (!class_exists($Class) || !is_subclass_of($Class, Entity::class)) throw new InvalidEntity("Class: {$Class} is not a subclass of " . Entity::class);
+        if (!class_exists($class) || !is_subclass_of($class, Entity::class)) throw new InvalidEntity("Class: {$class} is not a subclass of " . Entity::class);
 
         // Data in cache, exit early
-        if (in_array($foreign_key, array_keys(static::$relationships))) return $this;
+        if (in_array($key = $this->relationshipKey($foreign_key), array_keys(static::$relationships))) return $this;
 
 
-        $primary_key = $primary_key ?? $Class::primaryKey();
-        $foreign_ids = new Collection;
+        $ids = (new Collection($ids))->unique()->all();
 
-        // Retrieve all foreing ids as a single collection
-        foreach ($this->get() as $entity)
+
+        if ($this->isField($foreign_key))
         {
-            if (!is_array($entity->{$foreign_key})) continue;
+            $subquery = db_select("field_data_{$foreign_key}", 'field');
+            $subquery->fields('field', [
+                "{$foreign_key}_" . $class::primaryKey()
+            ]);
+            $subquery->condition('entity_type', static::entityType());
+            $subquery->condition('entity_id', $this->id());
 
-            $foreign_ids = $foreign_ids->merge(
-                array_map(
-                    function(array $item) use ($primary_key) { return $item[$primary_key]; },
-                    $entity->{$foreign_key}
+            static::$relationships[$key] = $class::all()
+                ->where(
+                    new PrimaryKeyIn(
+                        $subquery,
+                        $class::primaryKey()
+                    )
                 )
-            );
+                ->get();
         }
-
-        // Filter out all but unique ids and return as an array
-        $foreign_ids = $foreign_ids->unique()->all();
-
-        // Update in-memory relationships to reflect new get
-        static::$relationships[$foreign_key] = $Class::all()
-            ->where(
-                new PrimaryKeyIn($foreign_ids, $Class::primaryKey())
-            )
-            ->get();
+        else
+        {
+            // Update in-memory relationships to reflect new get
+            static::$relationships[$key] = $class::all()
+                ->where(
+                    new PrimaryKeyIn($ids, $foreign_key)
+                )
+                ->get();
+        }
 
 
         return $this;
@@ -363,40 +380,33 @@ abstract class Entity
     /**
      * Return the result of a One-To-One relationship
      */
-    protected function hasOne(string $Class, string $foreign_key, string $primary_key = null) : ?Entity
+    protected function hasOne(string $class, string $foreign_key, array $ids) : ?Entity
     {
-        return $this->hasMany($Class, $foreign_key, $primary_key)->first();
+        return $this->hasMany($class, $foreign_key, $ids)->first();
     }
 
 
     /**
      * Return the result of a One-To-Many relationship
      */
-    protected function hasMany(string $Class, string $foreign_key, string $primary_key = null) : Collection
+    protected function hasMany(string $class, string $foreign_key, array $ids) : Collection
     {
-        if (!is_array($this->{$foreign_key})) return new Collection;
-        if (!in_array($foreign_key, array_keys(static::$relationships))) $this->with($Class, $foreign_key, $primary_key);
+        $key = $this->relationshipKey($foreign_key);
 
-        $primary_key  = $primary_key ?? $Class::primaryKey();
-        $relationship = new Collection;
+        $this->with($class, $foreign_key, $ids);
+
 
         /** @var Collection $fetched */
-        $fetched = static::$relationships[$foreign_key];
-
-        $ids = array_map(
-            function(array $item) use ($primary_key) { return $item[$primary_key]; },
-            $this->{$foreign_key}
-        );
-
-        foreach ($ids as $id)
-        {
-            $relationship = $relationship->merge(
-                $fetched->filter(function(Entity $entity) use ($id) { return $id == $entity->id(); })
-            );
-        }
+        return static::$relationships[$key];
+    }
 
 
-        return $relationship;
+    /**
+     *
+     */
+    protected function relationshipKey(string $foreign_key) : string
+    {
+        return static::class . "::{$foreign_key}";
     }
 
 
@@ -453,15 +463,7 @@ abstract class Entity
      */
     protected function isField(string $name) : bool
     {
-        $field_names = array_keys(
-            field_language($this::entityType(), $this->entity)
-        );
-
-
-        return (
-            $this->entity !== null &&
-            in_array($name, $field_names)
-        );
+        return $this->fields()->find($name) !== null;
     }
 
 
