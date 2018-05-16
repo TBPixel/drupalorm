@@ -80,14 +80,7 @@ abstract class Entity
     {
         if (!property_exists($this->entity, $name)) return;
 
-
-        if ($this->isField($name))
-        {
-            $field = field_get_items($this::entityType(), $this->entity, $name);
-
-
-            return (count($field) > 1) ? $field : field_view_value(static::entityType(), $this->entity, $name, $field[0]);
-        }
+        if ($this->isField($name)) return field_get_items($this::entityType(), $this->entity, $name);
 
 
         return $this->entity->{$name};
