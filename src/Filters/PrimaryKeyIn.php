@@ -9,7 +9,7 @@ use TBPixel\DrupalORM\Database\Queryable;
 class PrimaryKeyIn implements Filterable
 {
     /**
-     * @var array
+     * @var mixed
      */
     protected $ids;
 
@@ -20,7 +20,7 @@ class PrimaryKeyIn implements Filterable
 
 
 
-    public function __construct(array $ids, string $keyname = 'id')
+    public function __construct($ids, string $keyname = 'id')
     {
         $this->ids     = $ids;
         $this->keyname = $keyname;
