@@ -332,7 +332,7 @@ abstract class Entity
     /**
      * Executes a relationship on a given model
      */
-    protected function with(string $class, string $foreign_key, array $ids) : Entity
+    protected function with(string $class, string $foreign_key, array $ids, string $column = null) : Entity
     {
         // Avoid an invalid class being passed in
         if (!class_exists($class) || !is_subclass_of($class, Entity::class)) throw new InvalidEntity("Class: {$class} is not a subclass of " . Entity::class);
@@ -341,14 +341,15 @@ abstract class Entity
         if (in_array($key = $this->relationshipKey($foreign_key), array_keys(static::$relationships))) return $this;
 
 
-        $ids = (new Collection($ids))->unique()->all();
+        $ids    = (new Collection($ids))->unique()->all();
+        $column = $column ?? $class::primaryKey();
 
 
         if ($this->isField($foreign_key))
         {
             $subquery = db_select("field_data_{$foreign_key}", 'field');
             $subquery->fields('field', [
-                "{$foreign_key}_" . $class::primaryKey()
+                "{$foreign_key}_" . $column
             ]);
             $subquery->condition('entity_type', static::entityType());
             $subquery->condition('entity_id', $this->id());
@@ -380,20 +381,20 @@ abstract class Entity
     /**
      * Return the result of a One-To-One relationship
      */
-    protected function hasOne(string $class, string $foreign_key, array $ids) : ?Entity
+    protected function hasOne(string $class, string $foreign_key, array $ids, string $column = null) : ?Entity
     {
-        return $this->hasMany($class, $foreign_key, $ids)->first();
+        return $this->hasMany($class, $foreign_key, $ids, $column)->first();
     }
 
 
     /**
      * Return the result of a One-To-Many relationship
      */
-    protected function hasMany(string $class, string $foreign_key, array $ids) : Collection
+    protected function hasMany(string $class, string $foreign_key, array $ids, string $column = null) : Collection
     {
         $key = $this->relationshipKey($foreign_key);
 
-        $this->with($class, $foreign_key, $ids);
+        $this->with($class, $foreign_key, $ids, $column);
 
 
         /** @var Collection $fetched */
