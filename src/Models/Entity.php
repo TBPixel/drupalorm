@@ -328,7 +328,7 @@ abstract class Entity
     /**
      * Executes a relationship on a given model
      */
-    protected function with(string $class, string $foreign_key, array $ids, string $column = null) : Entity
+    protected function with(string $class, string $foreign_key, string $primary_key, string $column) : Entity
     {
         // Avoid an invalid class being passed in
         if (!class_exists($class) || !is_subclass_of($class, Entity::class)) throw new InvalidEntity("Class: {$class} is not a subclass of " . Entity::class);
@@ -337,16 +337,13 @@ abstract class Entity
         if (in_array($key = $this->relationshipKey($foreign_key), array_keys(static::$relationships))) return $this;
 
 
-        $ids    = (new Collection($ids))->unique()->all();
-        $column = $column ?? $class::primaryKey();
+        $ids = $this->get()->map(
+            function(Entity $entity) use ($primary_key) { return $entity->{$primary_key}; }
+        )->unique()->all();
 
 
         if ($this->isField($foreign_key))
         {
-            $ids = $this->get()->map(
-                function(Entity $entity) { return $entity->id(); }
-            )->unique()->all();
-
             $subquery = db_select("field_data_{$foreign_key}", 'field');
             $subquery->fields('field', [
                 "{$foreign_key}_" . $column
@@ -381,24 +378,37 @@ abstract class Entity
     /**
      * Return the result of a One-To-One relationship
      */
-    protected function hasOne(string $class, string $foreign_key, array $ids, string $column = null) : ?Entity
+    protected function hasOne(string $class, string $foreign_key, string $primary_key, string $column = null) : ?Entity
     {
-        return $this->hasMany($class, $foreign_key, $ids, $column)->first();
+        return $this->hasMany($class, $foreign_key, $primary_key, $column)->first();
     }
 
 
     /**
      * Return the result of a One-To-Many relationship
      */
-    protected function hasMany(string $class, string $foreign_key, array $ids, string $column = null) : Collection
+    protected function hasMany(string $class, string $foreign_key, string $primary_key, string $column = null) : Collection
     {
-        $key = $this->relationshipKey($foreign_key);
+        $key    = $this->relationshipKey($foreign_key);
+        $column = $column ?? $class::primaryKey();
 
-        $this->with($class, $foreign_key, $ids, $column);
+        $this->with($class, $foreign_key, $primary_key, $column);
+
+        if (is_array($this->{$foreign_key}))
+        {
+            $ids = (new Collection($this->{$foreign_key}))->map(
+                function(array $reference) use($column) { return $reference[$column]; }
+            )->unique()->all();
+        }
+        else
+        {
+            $ids = [$this->{$foreign_key}];
+        }
 
 
-        /** @var Collection $fetched */
-        return static::$relationships[$key];
+        return static::$relationships[$key]->filter(
+            function(Entity $entity) use ($column, $ids) { return in_array($entity->{$column}, $ids); }
+        );
     }
 
 

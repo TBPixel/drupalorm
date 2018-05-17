@@ -44,8 +44,8 @@ class Term extends Entity
     {
         return $this->hasOne(
             Vocabulary::class,
-            'vid',
-            [$this->vid]
+            Vocabulary::primaryKey(),
+            Vocabulary::primaryKey()
         );
     }
 }
