@@ -1,4 +1,8 @@
 <?php
+/**
+ * TODO
+ *  - Cache query results to prevent duplicate requests, especially when performing relationship queries
+ */
 
 namespace TBPixel\DrupalORM\Models;
 
@@ -52,7 +56,7 @@ abstract class Entity
 
 
 
-    public function __construct($entity = null)
+    public function __construct(stdClass $entity = null)
     {
         $this->query = new DrupalQuery;
         $this->query->where(new TypeOf($this::entityType()));
@@ -186,8 +190,6 @@ abstract class Entity
             new PrimaryKeyIn($ids, $static::primaryKey())
         );
 
-        $result = $static->get();
-
 
         return $static->get();
     }
@@ -260,14 +262,15 @@ abstract class Entity
      */
     public function get() : Collection
     {
-        $data   = $this->query->execute();
-        $result = $this->load(
+        $data = $this->query->execute();
+
+        $data = $this->load(
             $this->getIds($data['result'])
         );
 
 
         return new Collection(
-            $this->mapEntitiesAsModels($result)
+            $this->mapEntitiesAsModels($data)
         );
     }
 
@@ -340,12 +343,16 @@ abstract class Entity
 
         if ($this->isField($foreign_key))
         {
+            $ids = $this->get()->map(
+                function(Entity $entity) { return $entity->id(); }
+            )->unique()->all();
+
             $subquery = db_select("field_data_{$foreign_key}", 'field');
             $subquery->fields('field', [
                 "{$foreign_key}_" . $column
             ]);
             $subquery->condition('entity_type', static::entityType());
-            $subquery->condition('entity_id', $this->id());
+            $subquery->condition('entity_id', $ids, 'IN');
 
             static::$relationships[$key] = $class::all()
                 ->where(
