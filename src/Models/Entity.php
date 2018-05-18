@@ -353,7 +353,7 @@ abstract class Entity
     {
         /* Models resulting from the current query. */
         $models   = $this->get();
-        $child_id = $this->{$foreign_key};
+        $child_id = (new Collection([$this->{$foreign_key}]))->flatten()->first();
         $id_set   = $models
             ->map(
                 function(Entity $entity) { return $entity->id(); }
@@ -394,7 +394,7 @@ abstract class Entity
     {
         /* Models resulting from the current query. */
         $models       = $this->get();
-        $child_id_set = static::array_flatten([$this->{$foreign_key}]);
+        $child_id_set = (new Collection([$this->{$foreign_key}]))->flatten()->all();
         $id_set       = $models
             ->map(
                 function(Entity $entity) { return $entity->id(); }
@@ -528,24 +528,6 @@ abstract class Entity
     protected static function isField(string $name) : bool
     {
         return static::fields()->find($name) !== null;
-    }
-
-
-    /**
-     * Flattens an array down to only it's values
-     */
-    protected static function array_flatten(array $array)
-    {
-        $result = [];
-
-        foreach ($array as $item)
-        {
-            if (!is_array($item)) $result[] = $item;
-            else $result = array_merge($result, static::array_flatten($item));
-        }
-
-
-        return $result;
     }
 
 
