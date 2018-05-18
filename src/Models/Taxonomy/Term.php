@@ -3,6 +3,7 @@
 namespace TBPixel\DrupalORM\Models\Taxonomy;
 
 use TBPixel\DrupalORM\Models\Entity;
+use TBPixel\DrupalORM\Models\Collection;
 use TBPixel\DrupalORM\Models\Taxonomy\Vocabulary;
 use stdClass;
 
@@ -40,9 +41,9 @@ class Term extends Entity
 
 
 
-    public function vocabulary() : Vocabulary
+    public function vocabulary() : Collection
     {
-        return $this->hasOne(
+        return $this->belongsTo(
             Vocabulary::class,
             Vocabulary::primaryKey(),
             Vocabulary::primaryKey()

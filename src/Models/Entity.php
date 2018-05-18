@@ -29,16 +29,18 @@ use stdClass;
 abstract class Entity
 {
     /**
-     * Maintains all relationships retrieved into memory
+     * Maintain a cache of query results
      *
      * @var array
      */
-    protected static $relationships = [];
+    protected static $cache = [];
 
     /**
-     * @var Fields
+     * Maintain an associative array of class field Fields
+     *
+     * @var array
      */
-    protected static $fields;
+    protected static $fields = [];
 
     /**
      * Maintains a reference to the query class
@@ -84,7 +86,7 @@ abstract class Entity
     {
         if (!property_exists($this->entity, $name)) return;
 
-        if ($this->isField($name)) return field_get_items($this::entityType(), $this->entity, $name);
+        if (static::isField($name)) return field_get_items($this::entityType(), $this->entity, $name);
 
 
         return $this->entity->{$name};
@@ -156,7 +158,7 @@ abstract class Entity
         if (static::bundle() === null) return new DrupalFields;
 
 
-        if (static::$fields === null)
+        if (!isset(static::$fields[static::class]) || static::$fields[static::class] === null)
         {
             $bases          = field_info_fields();
             $instances      = field_info_instances(static::entityType(), static::bundle());
@@ -168,11 +170,11 @@ abstract class Entity
                 ARRAY_FILTER_USE_BOTH
             );
 
-            static::$fields = new DrupalFields($bases, $instances);
+            static::$fields[static::class] = new DrupalFields($bases, $instances);
         }
 
 
-        return static::$fields;
+        return static::$fields[static::class];
     }
 
 
@@ -326,98 +328,149 @@ abstract class Entity
 
 
     /**
-     * Executes a relationship on a given model
+     * Executes a relationship query given all the required data, optionally accepting a unique filter with a field foreign key fallback
      */
-    protected function with(string $class, string $foreign_key, string $primary_key, string $column) : Entity
+    protected function with(string $class, array $id_set, string $foreign_key, string $foreign_join_key, Filterable $filter) : Collection
     {
         // Avoid an invalid class being passed in
         if (!class_exists($class) || !is_subclass_of($class, Entity::class)) throw new InvalidEntity("Class: {$class} is not a subclass of " . Entity::class);
 
-        // Data in cache, exit early
-        if (in_array($key = $this->relationshipKey($foreign_key), array_keys(static::$relationships))) return $this;
+        // Load the cached relationship if available
+        if (in_array($key = $this->relationshipKey($class, $foreign_key), static::$cache)) return static::$cache[$key];
 
 
-        $ids = $this->get()->map(
-            function(Entity $entity) use ($primary_key) { return $entity->{$primary_key}; }
-        )->unique()->all();
+        static::$cache[$key] = $class::all()->where($filter)->get();
 
 
-        if ($this->isField($foreign_key))
+        return static::$cache[$key];
+    }
+
+
+    /**
+     * Defines the relationship of Model that has one child
+     */
+    protected function hasOne(string $class, string $foreign_key, string $foreign_join_key) : ?Entity
+    {
+        /* Models resulting from the current query. */
+        $models   = $this->get();
+        $child_id = $this->{$foreign_key};
+        $id_set   = $models
+            ->map(
+                function(Entity $entity) { return $entity->id(); }
+            )
+            ->unique()
+            ->all();
+
+        if (!static::isField($foreign_key)) { $filter = new PrimaryKeyIn($id_set, $foreign_join_key); }
+        else
         {
             $subquery = db_select("field_data_{$foreign_key}", 'field');
             $subquery->fields('field', [
-                "{$foreign_key}_" . $column
+                "{$foreign_key}_" . $foreign_join_key
             ]);
             $subquery->condition('entity_type', static::entityType());
-            $subquery->condition('entity_id', $ids, 'IN');
+            $subquery->condition('entity_id', $id_set, 'IN');
 
-            static::$relationships[$key] = $class::all()
-                ->where(
-                    new PrimaryKeyIn(
-                        $subquery,
-                        $class::primaryKey()
-                    )
-                )
-                ->get();
+
+            $filter = new PrimaryKeyIn(
+                $subquery,
+                $class::primaryKey()
+            );
         }
+
+
+        return $this->with($class, $id_set, $foreign_key, $foreign_join_key, $filter)
+            ->filter(
+                function(Entity $entity) use ($child_id) { return $entity->id() === $child_id; }
+            )
+            ->first();
+    }
+
+
+    /**
+     * Defines the relationship of a Model that has many children
+     */
+    protected function hasMany(string $class, string $foreign_key, string $foreign_join_key) : Collection
+    {
+        /* Models resulting from the current query. */
+        $models       = $this->get();
+        $child_id_set = static::array_flatten([$this->{$foreign_key}]);
+        $id_set       = $models
+            ->map(
+                function(Entity $entity) { return $entity->id(); }
+            )
+            ->unique()
+            ->all();
+
+
+        if (!static::isField($foreign_key)) { $filter = new PrimaryKeyIn($id_set, $foreign_join_key); }
         else
         {
-            // Update in-memory relationships to reflect new get
-            static::$relationships[$key] = $class::all()
-                ->where(
-                    new PrimaryKeyIn($ids, $foreign_key)
-                )
-                ->get();
+            $subquery = db_select("field_data_{$foreign_key}", 'field');
+            $subquery->fields('field', [
+                "{$foreign_key}_" . $foreign_join_key
+            ]);
+            $subquery->condition('entity_type', static::entityType());
+            $subquery->condition('entity_id', $id_set, 'IN');
+
+
+            $filter = new PrimaryKeyIn(
+                $subquery,
+                $class::primaryKey()
+            );
         }
 
 
-        return $this;
+        return $this
+            ->with($class, $id_set, $foreign_key, $foreign_join_key, $filter)
+            ->filter(
+                function(Entity $entity) use ($foreign_join_key, $child_id_set) { return in_array($entity->{$foreign_join_key}, $child_id_set); }
+            );
     }
 
 
     /**
-     * Return the result of a One-To-One relationship
+     * Defines the relationship of a Model that belongs to a parent
      */
-    protected function hasOne(string $class, string $foreign_key, string $primary_key, string $column = null) : ?Entity
+    protected function belongsTo(string $class, string $foreign_key, string $foreign_join_key) : Collection
     {
-        return $this->hasMany($class, $foreign_key, $primary_key, $column)->first();
-    }
+        /* Models resulting from the current query. */
+        $models = $this->get();
+        $id_set = $models
+            ->map(
+                function(Entity $entity) use ($foreign_key) { return $entity->{$foreign_key}; }
+            )
+            ->unique()
+            ->all();
 
 
-    /**
-     * Return the result of a One-To-Many relationship
-     */
-    protected function hasMany(string $class, string $foreign_key, string $primary_key, string $column = null) : Collection
-    {
-        $key    = $this->relationshipKey($foreign_key);
-        $column = $column ?? $class::primaryKey();
-
-        $this->with($class, $foreign_key, $primary_key, $column);
-
-        if (is_array($this->{$foreign_key}))
-        {
-            $ids = (new Collection($this->{$foreign_key}))->map(
-                function(array $reference) use($column) { return $reference[$column]; }
-            )->unique()->all();
-        }
+        if (!$class::isField($foreign_join_key)) { $filter = new PrimaryKeyIn($id_set, $foreign_key); }
         else
         {
-            $ids = [$this->{$foreign_key}];
+            $subquery = db_select("field_data_{$foreign_join_key}", 'field');
+            $subquery->fields('field', ['entity_id']);
+            $subquery->condition('entity_type', $class::entityType());
+            $subquery->condition("{$foreign_join_key}_{$foreign_key}", $id_set, 'IN');
+
+
+            $filter = new PrimaryKeyIn(
+                $subquery,
+                $class::primaryKey()
+            );
         }
 
 
-        return static::$relationships[$key]->filter(
-            function(Entity $entity) use ($column, $ids) { return in_array($entity->{$column}, $ids); }
-        );
+        return $this
+            ->with($class, $id_set, $foreign_key, $foreign_join_key, $filter);
     }
 
 
     /**
-     *
+     * Returns a key representing a unique relationship result
      */
-    protected function relationshipKey(string $foreign_key) : string
+    protected function relationshipKey(string $class, string $foreign_key) : string
     {
-        return static::class . "::{$foreign_key}";
+        return static::class . "::{$class}" . "->{$foreign_key}";
     }
 
 
@@ -472,9 +525,27 @@ abstract class Entity
     /**
      * Returns if the given field name is a field of the current entity
      */
-    protected function isField(string $name) : bool
+    protected static function isField(string $name) : bool
     {
-        return $this->fields()->find($name) !== null;
+        return static::fields()->find($name) !== null;
+    }
+
+
+    /**
+     * Flattens an array down to only it's values
+     */
+    protected static function array_flatten(array $array)
+    {
+        $result = [];
+
+        foreach ($array as $item)
+        {
+            if (!is_array($item)) $result[] = $item;
+            else $result = array_merge($result, static::array_flatten($item));
+        }
+
+
+        return $result;
     }
 
 

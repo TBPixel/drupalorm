@@ -36,7 +36,7 @@ class Article extends Node
         return $this->hasMany(
             Tag::class,
             'field_tags',
-            $this->primaryKey()
+            Tag::primaryKey()
         );
     }
 }

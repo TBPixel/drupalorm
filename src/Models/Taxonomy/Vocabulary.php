@@ -97,9 +97,8 @@ class Vocabulary extends Entity implements Installable
     {
         return $this->hasMany(
             Term::class,
-            $this->primaryKey(),
-            $this->primaryKey(),
-            $this->primaryKey()
+            static::primaryKey(),
+            static::primaryKey()
         );
     }
 
