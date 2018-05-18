@@ -381,7 +381,7 @@ abstract class Entity
 
         return $this->with($class, $id_set, $foreign_key, $foreign_join_key, $filter)
             ->filter(
-                function(Entity $entity) use ($child_id) { return $entity->id() === $child_id; }
+                function(Entity $entity) use ($child_id) { return $entity->id() == $child_id; }
             )
             ->first();
     }
