@@ -169,6 +169,33 @@ class Collection implements Countable, IteratorAggregate, JsonSerializable
 
 
     /**
+     * Return a collection that contains the flattened results of a multi-dimensional array
+     */
+    public function flatten() : self
+    {
+        $result = [];
+
+        foreach ($this->items as $item)
+        {
+            if ($item instanceof static) $item = $item->all();
+
+
+            if (!is_array($item)) $result[] = $item;
+            else
+            {
+                $result = array_merge(
+                    $result,
+                    (new static($item))->flatten()->all()
+                );
+            }
+        }
+
+
+        return new static($result);
+    }
+
+
+    /**
      * Countable implementation
      *
      * Return a count of the collection size
