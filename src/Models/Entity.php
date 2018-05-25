@@ -312,9 +312,9 @@ abstract class Entity
     /**
      * Return the ID of the Entity
      */
-    public function id() : int
+    public function id() : ?int
     {
-        return $this->entity->{$this::primaryKey()};
+        return $this->entity->{$this::primaryKey()} ?? null;
     }
 
 
