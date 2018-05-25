@@ -52,19 +52,20 @@ class Vocabulary extends Entity implements Installable
 
         static::uninstall_fields();
 
-        taxonomy_vocabulary_delete($vocab->vid);
+        taxonomy_vocabulary_delete($vocab->{static::primaryKey()});
     }
 
 
 
     public static function defaults(stdClass $entity) : stdClass
     {
-        $entity->name         = '';
-        $entity->machine_name = '';
-        $entity->description  = '';
-        $entity->module       = 'taxonomy';
-        $entity->hierarchy    = 0;
-        $entity->weight       = 0;
+        $entity->{static::primaryKey()} = null;
+        $entity->name                   = '';
+        $entity->machine_name           = null;
+        $entity->description            = '';
+        $entity->module                 = 'taxonomy';
+        $entity->hierarchy              = 0;
+        $entity->weight                 = 0;
 
 
         return $entity;
@@ -84,7 +85,7 @@ class Vocabulary extends Entity implements Installable
 
     public function delete() : Entity
     {
-        if (!isset($this->entity->{static::primaryKey()}) || $this->entity->{static::primaryKey()} === null) throw new InvalidEntity('Taxonomy Vocabulary must have an entity instance to be deleted!');
+        if ($this->id() === null) throw new InvalidEntity('Taxonomy Vocabulary must have an ID to be deleted!');
 
         taxonomy_vocabulary_delete($this->entity->{static::primaryKey()});
 
