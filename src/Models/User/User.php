@@ -20,6 +20,9 @@ class User extends Entity
 
     public static function defaults($entity)
     {
+        if ($entity === null) $entity = new \stdClass;
+
+
         $entity->{static::primaryKey()} = null;
         $entity->name                   = '';
         $entity->pass                   = '';

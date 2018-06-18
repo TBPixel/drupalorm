@@ -69,6 +69,8 @@ class Node extends Entity implements Installable
     public static function defaults($entity)
     {
         if (!static::bundle()) throw new InvalidEntity('Node must have a bundle to be saved!');
+        if ($entity === null) $entity = new \stdClass;
+
 
         global $user;
 
