@@ -328,6 +328,26 @@ abstract class Entity
 
 
     /**
+     * Render a field value by name
+     */
+    public function render(string $name, int $delta = 0) : ?string
+    {
+        if (!$this->isField($name)) return null;
+
+        $field = $this->{$name};
+        $value = field_view_value(
+            $this->entityType(),
+            $this->entity,
+            $name,
+            $field[$delta]
+        );
+
+
+        return $value['#access'] ? drupal_render($value) : null;
+    }
+
+
+    /**
      * Executes a relationship query given all the required data, optionally accepting a unique filter with a field foreign key fallback
      */
     protected function with(string $class, array $id_set, string $foreign_key, string $foreign_join_key, Filterable $filter) : Collection
