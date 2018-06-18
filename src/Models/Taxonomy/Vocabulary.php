@@ -6,7 +6,6 @@ use TBPixel\DrupalORM\Models\Entity;
 use TBPixel\DrupalORM\Models\Collection;
 use TBPixel\DrupalORM\Models\Installable;
 use TBPixel\DrupalORM\Exceptions\InvalidEntity;
-use stdClass;
 
 
 class Vocabulary extends Entity implements Installable
@@ -57,7 +56,7 @@ class Vocabulary extends Entity implements Installable
 
 
 
-    public static function defaults(stdClass $entity) : stdClass
+    public static function defaults($entity)
     {
         $entity->{static::primaryKey()} = null;
         $entity->name                   = '';

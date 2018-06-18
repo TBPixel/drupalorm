@@ -3,7 +3,6 @@
 namespace TBPixel\DrupalORM\Models\User;
 
 use TBPixel\DrupalORM\Models\Entity;
-use stdClass;
 use TBPixel\DrupalORM\Exceptions\InvalidEntity;
 
 
@@ -19,7 +18,7 @@ class User extends Entity
         return 'user';
     }
 
-    public static function defaults(stdClass $entity) : stdClass
+    public static function defaults($entity)
     {
         $entity->{static::primaryKey()} = null;
         $entity->name                   = '';

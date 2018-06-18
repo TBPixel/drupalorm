@@ -23,7 +23,6 @@ use TBPixel\DrupalORM\Alterations\{
     Limit
 };
 use TBPixel\DrupalORM\Exceptions\InvalidEntity;
-use stdClass;
 
 
 abstract class Entity
@@ -58,14 +57,14 @@ abstract class Entity
 
 
 
-    public function __construct(stdClass $entity = null)
+    public function __construct($entity = null)
     {
         $this->query = new DrupalQuery;
         $this->query->where(new TypeOf($this::entityType()));
         if ($this::bundle() !== null) $this->query->where(new GroupOf($this::bundle()));
 
         if ($entity !== null && is_object($entity)) $this->entity = $entity;
-        else $this->entity = static::defaults(new stdClass);
+        else $this->entity = static::defaults($entity);
     }
 
 
@@ -126,7 +125,7 @@ abstract class Entity
     /**
      * Sets the default values of the entity instance
      */
-    abstract public static function defaults(stdClass $entity) : stdClass;
+    abstract public static function defaults($entity);
 
 
     /**

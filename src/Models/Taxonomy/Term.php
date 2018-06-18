@@ -6,7 +6,6 @@ use TBPixel\DrupalORM\Models\Entity;
 use TBPixel\DrupalORM\Models\Collection;
 use TBPixel\DrupalORM\Models\Taxonomy\Vocabulary;
 use TBPixel\DrupalORM\Exceptions\InvalidEntity;
-use stdClass;
 
 
 class Term extends Entity
@@ -23,7 +22,7 @@ class Term extends Entity
     }
 
 
-    public static function defaults(stdClass $entity) : stdClass
+    public static function defaults($entity)
     {
         $entity->{static::primaryKey()}  = null;
         $entity->vid                     = null;

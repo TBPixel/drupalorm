@@ -6,7 +6,6 @@ use TBPixel\DrupalORM\Models\Entity;
 use TBPixel\DrupalORM\Models\Collection;
 use TBPixel\DrupalORM\Models\Installable;
 use TBPixel\DrupalORM\Exceptions\InvalidEntity;
-use stdClass;
 use DateTimeInterface;
 use DateTime;
 
@@ -67,7 +66,7 @@ class Node extends Entity implements Installable
     }
 
 
-    public static function defaults(stdClass $entity) : stdClass
+    public static function defaults($entity)
     {
         if (!static::bundle()) throw new InvalidEntity('Node must have a bundle to be saved!');
 

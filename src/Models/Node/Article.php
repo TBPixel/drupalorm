@@ -9,7 +9,6 @@ use TBPixel\DrupalORM\Fields\{
     Fields,
     DrupalFields
 };
-use stdClass;
 
 
 class Article extends Node
@@ -20,7 +19,7 @@ class Article extends Node
     }
 
 
-    public static function defaults(stdClass $entity) : stdClass
+    public static function defaults($entity)
     {
         $entity = parent::defaults($entity);
 
