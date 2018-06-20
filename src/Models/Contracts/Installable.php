@@ -1,6 +1,6 @@
 <?php
 
-namespace TBPixel\DrupalORM\Models;
+namespace TBPixel\DrupalORM\Models\Contracts;
 
 
 interface Installable

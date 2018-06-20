@@ -4,11 +4,14 @@ namespace TBPixel\DrupalORM\Models\Taxonomy;
 
 use TBPixel\DrupalORM\Models\Entity;
 use TBPixel\DrupalORM\Models\Collection;
-use TBPixel\DrupalORM\Models\Installable;
+use TBPixel\DrupalORM\Models\Contracts\{
+    Installable,
+    UrlAliased
+};
 use TBPixel\DrupalORM\Exceptions\InvalidEntity;
 
 
-class Vocabulary extends Entity implements Installable
+class Vocabulary extends Entity implements Installable, UrlAliased
 {
     public static function entityType() : string
     {
@@ -106,9 +109,6 @@ class Vocabulary extends Entity implements Installable
     }
 
 
-    /**
-     * Returns the relative url alias of this taxonomy
-     */
     public function urlAlias() : string
     {
         return '/' . drupal_get_path_alias("taxonomy/term/{$this->tid}");

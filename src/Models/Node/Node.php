@@ -4,13 +4,16 @@ namespace TBPixel\DrupalORM\Models\Node;
 
 use TBPixel\DrupalORM\Models\Entity;
 use TBPixel\DrupalORM\Models\Collection;
-use TBPixel\DrupalORM\Models\Installable;
+use TBPixel\DrupalORM\Models\Contracts\{
+    Installable,
+    UrlAliased
+};
 use TBPixel\DrupalORM\Exceptions\InvalidEntity;
 use DateTimeInterface;
 use DateTime;
 
 
-class Node extends Entity implements Installable
+class Node extends Entity implements Installable, UrlAliased
 {
     public static function entityType() : string
     {
@@ -135,9 +138,6 @@ class Node extends Entity implements Installable
     }
 
 
-    /**
-     * Returns the relative url alias of this node
-     */
     public function urlAlias() : string
     {
         return '/' . drupal_get_path_alias("node/{$this->nid}");
