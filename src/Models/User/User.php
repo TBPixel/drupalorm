@@ -8,15 +8,21 @@ use TBPixel\DrupalORM\Exceptions\InvalidEntity;
 
 class User extends Entity
 {
-    public static function primaryKey(): string
+    public static function primaryKey() : string
     {
         return 'uid';
     }
 
-    public static function entityType(): string
+    public static function entityType() : string
     {
         return 'user';
     }
+
+    public static function bundle() : string
+    {
+        return 'user';
+    }
+
 
     public static function defaults($entity)
     {
