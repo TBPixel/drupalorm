@@ -4,11 +4,12 @@ namespace TBPixel\DrupalORM\Models\Taxonomy;
 
 use TBPixel\DrupalORM\Models\Entity;
 use TBPixel\DrupalORM\Models\Collection;
+use TBPixel\DrupalORM\Models\Contracts\UrlAliased;
 use TBPixel\DrupalORM\Models\Taxonomy\Vocabulary;
 use TBPixel\DrupalORM\Exceptions\InvalidEntity;
 
 
-class Term extends Entity
+class Term extends Entity implements UrlAliased
 {
     public static function entityType() : string
     {
@@ -62,6 +63,11 @@ class Term extends Entity
         return $this;
     }
 
+
+    public function urlAlias() : string
+    {
+        return '/' . drupal_get_path_alias('taxonomy/term/' . $this->id());
+    }
 
 
     public function vocabulary() : Collection
