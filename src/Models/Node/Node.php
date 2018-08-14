@@ -33,7 +33,9 @@ class Node extends Entity implements Installable, UrlAliased
         if (static::bundle() === null) return;
 
 
-        $settings['type'] = static::bundle();
+        $settings['type']   = static::bundle();
+        $settings['base']   = $settings['base'] ?? 'node_content';
+        $settings['custom'] = $settings['custom'] ?? true;
 
         $content_type = node_type_set_defaults($settings);
 
