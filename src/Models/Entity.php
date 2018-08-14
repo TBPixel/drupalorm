@@ -501,37 +501,22 @@ abstract class Entity
         // Skip if Entity has no bundle
         if (static::bundle() === null) return;
 
-        // Break field install into delayed chunks to allow time for database processing
-        $field_chunks = array_chunk(static::fields()->bases(), 5);
 
-        foreach($field_chunks as $chunk)
+        foreach (static::fields()->bases() as $base)
         {
-            foreach ($chunk as $base)
-            {
-                if (!field_info_field($base['field_name'])) field_create_field($base);
-            }
-
-            sleep(3);
+            if (!field_info_field($base['field_name'])) field_create_field($base);
         }
 
 
-        // Break instance install into delayed chunks to allow time for database processing
-        $instance_chunks = array_chunk(static::fields()->instances(), 5);
-
-        foreach($instance_chunks as $chunk)
+        foreach (static::fields()->instances() as $instance)
         {
-            foreach ($chunk as $instance)
+            if (!field_info_instance(static::entityType(), $instance['field_name'], static::bundle()))
             {
-                if (!field_info_instance(static::entityType(), $instance['field_name'], static::bundle()))
-                {
-                    $instance['entity_type'] = $instance['entity_type'] ?? static::entityType();
-                    $instance['bundle']      = $instance['bundle'] ?? static::bundle();
+                $instance['entity_type'] = $instance['entity_type'] ?? static::entityType();
+                $instance['bundle']      = $instance['bundle'] ?? static::bundle();
 
-                    field_create_instance($instance);
-                }
+                field_create_instance($instance);
             }
-
-            sleep(3);
         }
     }
 
@@ -545,20 +530,12 @@ abstract class Entity
         if (static::bundle() === null) return;
 
 
-        // Break uninstall into chunks to allow time for database processing
-        $instance_chunks = array_chunk(static::fields()->instances(), 5);
-
-        foreach ($instance_chunks as $chunk)
+        foreach (static::fields()->instances() as $instance)
         {
-            foreach ($chunk as $instance)
-            {
-                $entity_type = $instance['entity_type'] ?? static::entityType();
-                $bundle      = $instance['bundle'] ?? static::bundle();
+            $entity_type = $instance['entity_type'] ?? static::entityType();
+            $bundle      = $instance['bundle'] ?? static::bundle();
 
-                if (field_info_instance($entity_type, $instance['field_name'], $bundle)) field_delete_instance($instance);
-            }
-
-            sleep(3);
+            if (field_info_instance($entity_type, $instance['field_name'], $bundle)) field_delete_instance($instance);
         }
     }
 
@@ -572,20 +549,11 @@ abstract class Entity
         if (static::bundle() === null) return;
 
 
-        // Break into chunks to allow time for database processing
-        $field_chunks = array_chunk(static::fields()->bases(), 5);
-
-
-        foreach ($field_chunks as $chunk)
+        foreach (static::fields()->bases() as $base)
         {
-            foreach ($chunk as $base)
-            {
-                $field = $base['field_name'];
+            $field = $base['field_name'];
 
-                if (field_info_field($field)) field_delete_field($field);
-            }
-
-            sleep(3);
+            if (field_info_field($field)) field_delete_field($field);
         }
     }
 
