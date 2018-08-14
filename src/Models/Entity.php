@@ -506,7 +506,7 @@ abstract class Entity
 
         foreach($field_chunks as $chunk)
         {
-            foreach ($chunk as $field)
+            foreach ($chunk as $base)
             {
                 if (!field_info_field($base['field_name'])) field_create_field($base);
             }
