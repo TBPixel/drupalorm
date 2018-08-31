@@ -23,9 +23,10 @@ use TBPixel\DrupalORM\Alterations\{
     Limit
 };
 use TBPixel\DrupalORM\Exceptions\InvalidEntity;
+use JsonSerializable;
 
 
-abstract class Entity
+abstract class Entity implements JsonSerializable
 {
     /**
      * Maintain a cache of query results
@@ -343,6 +344,24 @@ abstract class Entity
 
 
         return $value['#access'] ? drupal_render($value) : null;
+    }
+
+
+    /**
+     * Return the raw entity as an array for json serialization
+     */
+    public function jsonSerialize()
+    {
+        return $this->toArray();
+    }
+
+
+    /**
+     * Return the raw entity as an array
+     */
+    public function toArray() : array
+    {
+        return (array) $this->entity;
     }
 
 
