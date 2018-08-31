@@ -112,6 +112,30 @@ abstract class Entity implements JsonSerializable
 
 
     /**
+     * Returns either a collection of instances or a single object based on the data passed in.
+     */
+    public static function hydrate(array $data)
+    {
+        $is_one_model = count(array_filter(array_keys($array), 'is_string')) > 0;
+
+        // Hydrate a single model
+        if ($is_one_model)
+        {
+            return new static((object) $data);
+        }
+
+        // Hydrate an array of models
+        foreach ($data as $key => $model)
+        {
+            $data[$key] = new static((object) $model);
+        }
+
+
+        return new Collection($data);
+    }
+
+
+    /**
      * Returns the primary key of the entity
      */
     abstract public static function primaryKey() : string;
