@@ -116,7 +116,7 @@ abstract class Entity implements JsonSerializable
      */
     public static function hydrate(array $data)
     {
-        $is_one_model = count(array_filter(array_keys($array), 'is_string')) > 0;
+        $is_one_model = count(array_filter(array_keys($data), 'is_string')) > 0;
 
         // Hydrate a single model
         if ($is_one_model)
