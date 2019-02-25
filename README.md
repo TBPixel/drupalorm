@@ -1,5 +1,7 @@
 # Drupal Object Relational Mappings
 
+NOTE: This project is unsupported and it is **highly** recommended that users reach for ORM implementations such as Doctrine or Eloquent.
+
 
 ## Installation
 
